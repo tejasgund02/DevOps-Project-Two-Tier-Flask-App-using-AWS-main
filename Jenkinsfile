@@ -57,7 +57,7 @@ pipeline {
                             # -d: Detached mode (runs in background)
                             # --remove-orphans: Cleans up containers not defined in the compose file
                             # Note the space between docker and compose!
-                            // We are adding the hyphen (-) back because we installed the standalone binary!
+                            # We are adding the hyphen (-) back because we installed the standalone binary!
                             sudo docker-compose up -d --build --remove-orphans
                         '
                     """
