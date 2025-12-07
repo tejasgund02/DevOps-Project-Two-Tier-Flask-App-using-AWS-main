@@ -63,18 +63,18 @@ pipeline {
             }
         }
 
-        stage('Cleanup (Free Tier Saver)') {
-            steps {
-                sshagent([SSH_CRED_ID]) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
-                            echo "Cleaning up old images to save disk space..."
-                            # This removes all dangling images (layers not used by running containers)
-                            sudo docker image prune -f
-                        '
-                    """
-                }
-            }
-        }
+        // stage('Cleanup (Free Tier Saver)') {
+        //     steps {
+        //         sshagent([SSH_CRED_ID]) {
+        //             sh """
+        //                 ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
+        //                     echo "Cleaning up old images to save disk space..."
+        //                     # This removes all dangling images (layers not used by running containers)
+        //                     sudo docker image prune -f
+        //                 '
+        //             """
+        //         }
+        //     }
+        // }
     }
 }
