@@ -1,8 +1,9 @@
+
 import os
 
-DB_HOST = os.getenv("DB_HOST", "db")          # service name in docker-compose
-DB_USER = os.getenv("DB_USER", "flask_user")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "flask_password")
-DB_NAME = os.getenv("DB_NAME", "flask_db")
-
-SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-key")
+# These defaults work with the docker-compose file below
+DB_HOST = os.environ.get('DB_HOST', 'db') 
+DB_USER = os.environ.get('DB_USER', 'root')
+DB_PASSWORD = os.environ.get('DB_PASSWORD', 'rootpassword')
+DB_NAME = os.environ.get('DB_NAME', 'student_db')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'supersecretkey')

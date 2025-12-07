@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+   web:
+     build: .
+     container_name: student_web_app 
+     ports:
+       - "5000:5000"
+     environment:
+        - DB_HOST=db
+        - DB_USER=root
+        - DB_PASSWORD=rootpassword
+        - DB_NAME=student_db
+     depends_on:
+        - db
+   db:
+     image: mysql:5.7
+     environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=student_db
+     volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql 
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
