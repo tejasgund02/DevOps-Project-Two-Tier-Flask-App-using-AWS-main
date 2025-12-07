@@ -1,38 +1,76 @@
 pipeline {
     agent any
 
+    // Define constants here so they are easy to change later
     environment {
-        // Replace with your EC2 Public IP
-        EC2_IP = '1.23.45.67' 
-        // Replace with your GitHub URL
-        REPO_URL = 'https://github.com/YOUR_USERNAME/student-app-devops.git'
-        // The credentials ID you created in Step 3
-        SSH_CRED_ID = 'ec2-server-key'
+        EC2_IP = '65.1.134.171'         // <--- CHANGE THIS
+        EC2_USER = 'ubuntu'
+        REPO_URL = 'git@github.com:tejasgund02/DevOps-Project-Two-Tier-Flask-App-using-AWS-main.git' // <--- CHANGE THIS
+        SSH_CRED_ID = 'ec2-instance-key'
+        PROJECT_DIR = '/home/ubuntu/student-app'
     }
 
     stages {
-        stage('Connect & Deploy') {
+        stage('Check Connectivity') {
             steps {
                 sshagent([SSH_CRED_ID]) {
-                    // We use 'ssh -o StrictHostKeyChecking=no' to avoid the "yes/no" prompt
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} '
-                            # 1. Create a folder if it doesn't exist
-                            mkdir -p app
-                            cd app
+                    // Simple ping to make sure EC2 is alive before we try anything heavy
+                    sh "ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} 'echo Connection Successful! Server is ready.'"
+                }
+            }
+        }
 
-                            # 2. Clone or Pull the latest code
+        stage('Update Code on Server') {
+            steps {
+                sshagent([SSH_CRED_ID]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
+                            # 1. Create directory if it doesn not exist
+                            mkdir -p ${PROJECT_DIR}
+                            cd ${PROJECT_DIR}
+
+                            # 2. Check if git is already initialized
                             if [ -d ".git" ]; then
-                                echo "Pulling latest changes..."
+                                echo "Repository exists. Pulling latest changes..."
+                                git reset --hard  # Force discard local changes to avoid conflicts
                                 git pull origin main
                             else
-                                echo "Cloning repo..."
+                                echo "First time deployment. Cloning repository..."
+                                # We clone into the current directory (.)
                                 git clone ${REPO_URL} .
                             fi
+                        '
+                    """
+                }
+            }
+        }
 
-                            # 3. Build and Run with Docker Compose
-                            # We rebuild to make sure code changes are picked up
-                            docker-compose up -d --build
+        stage('Build & Deploy') {
+            steps {
+                sshagent([SSH_CRED_ID]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
+                            cd ${PROJECT_DIR}
+                            
+                            echo "Building and Starting Containers..."
+                            # --build: Force rebuild of image to pick up code changes
+                            # -d: Detached mode (runs in background)
+                            # --remove-orphans: Cleans up containers not defined in the compose file
+                            sudo docker-compose up -d --build --remove-orphans
+                        '
+                    """
+                }
+            }
+        }
+
+        stage('Cleanup (Free Tier Saver)') {
+            steps {
+                sshagent([SSH_CRED_ID]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
+                            echo "Cleaning up old images to save disk space..."
+                            # This removes all dangling images (layers not used by running containers)
+                            sudo docker image prune -f
                         '
                     """
                 }
