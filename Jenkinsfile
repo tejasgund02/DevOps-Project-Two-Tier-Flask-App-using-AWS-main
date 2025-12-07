@@ -48,16 +48,16 @@ pipeline {
         stage('Build & Deploy') {
             steps {
                 sshagent([SSH_CRED_ID]) {
+                    sshagent([SSH_CRED_ID]) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
                             cd ${PROJECT_DIR}
                             
-                            echo "Building and Starting Containers..."
-                            # --build: Force rebuild of image to pick up code changes
-                            # -d: Detached mode (runs in background)
-                            # --remove-orphans: Cleans up containers not defined in the compose file
-                            # Note the space between docker and compose!
-                            # We are adding the hyphen (-) back because we installed the standalone binary!
+                            echo " stopping old containers to avoid conflicts..."
+                            # The "|| true" part means "if this fails (because no containers exist), just keep going"
+                            sudo docker-compose down || true
+                            
+                            echo "Building and Starting New Containers..."
                             sudo docker-compose up -d --build --remove-orphans
                         '
                     """
