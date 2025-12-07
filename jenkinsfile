@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    environment {
+        // Replace with your EC2 Public IP
+        EC2_IP = '1.23.45.67' 
+        // Replace with your GitHub URL
+        REPO_URL = 'https://github.com/YOUR_USERNAME/student-app-devops.git'
+        // The credentials ID you created in Step 3
+        SSH_CRED_ID = 'ec2-server-key'
+    }
+
+    stages {
+        stage('Connect & Deploy') {
+            steps {
+                sshagent([SSH_CRED_ID]) {
+                    // We use 'ssh -o StrictHostKeyChecking=no' to avoid the "yes/no" prompt
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ubuntu@${EC2_IP} '
+                            # 1. Create a folder if it doesn't exist
+                            mkdir -p app
+                            cd app
+
+                            # 2. Clone or Pull the latest code
+                            if [ -d ".git" ]; then
+                                echo "Pulling latest changes..."
+                                git pull origin main
+                            else
+                                echo "Cloning repo..."
+                                git clone ${REPO_URL} .
+                            fi
+
+                            # 3. Build and Run with Docker Compose
+                            # We rebuild to make sure code changes are picked up
+                            docker-compose up -d --build
+                        '
+                    """
+                }
+            }
+        }
+    }
+}
