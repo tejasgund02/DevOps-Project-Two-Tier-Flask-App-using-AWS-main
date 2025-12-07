@@ -56,25 +56,26 @@ pipeline {
                             # --build: Force rebuild of image to pick up code changes
                             # -d: Detached mode (runs in background)
                             # --remove-orphans: Cleans up containers not defined in the compose file
-                            sudo docker-compose up -d --build --remove-orphans
+                            # Note the space between docker and compose!
+                            sudo docker compose up -d --build --remove-orphans
                         '
                     """
                 }
             }
         }
 
-        // stage('Cleanup (Free Tier Saver)') {
-        //     steps {
-        //         sshagent([SSH_CRED_ID]) {
-        //             sh """
-        //                 ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
-        //                     echo "Cleaning up old images to save disk space..."
-        //                     # This removes all dangling images (layers not used by running containers)
-        //                     sudo docker image prune -f
-        //                 '
-        //             """
-        //         }
-        //     }
-        // }
+        stage('Cleanup (Free Tier Saver)') {
+            steps {
+                sshagent([SSH_CRED_ID]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
+                            echo "Cleaning up old images to save disk space..."
+                            # This removes all dangling images (layers not used by running containers)
+                            sudo docker system prune -f
+                        '
+                    """
+                }
+            }
+        }
     }
 }
